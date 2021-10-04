@@ -16,7 +16,7 @@ COPY --from=origintests /usr/bin/kubectl /usr/bin/kubectl
 RUN yum install epel-release -y && \
 yum install -y git python36 python3-pip jq gettext && \
 python3 -m pip install -U pip && \
-git clone https://github.com/ratsuf/kraken /root/kraken && \
+git clone -b cluster-version-fetching-fix https://github.com/ratsuf/kraken /root/kraken && \
 mkdir -p /root/.kube && cd /root/kraken && \
 pip3 install -r requirements.txt
 
