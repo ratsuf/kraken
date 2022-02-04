@@ -19,7 +19,7 @@ class OPENSTACKCLOUD:
     # Start the node instance
     def start_instances(self, node):
         try:
-            runcommand.invoke("openstack server start %s" % (node))
+            runcommand.invoke("openstack --insecure server start %s" % (node))
             logging.info("Instance: " + str(node) + " started")
         except Exception as e:
             logging.error("Failed to start node instance %s. Encountered following " "exception: %s." % (node, e))
@@ -28,7 +28,7 @@ class OPENSTACKCLOUD:
     # Stop the node instance
     def stop_instances(self, node):
         try:
-            runcommand.invoke("openstack server stop %s" % (node))
+            runcommand.invoke("openstack --insecure server stop %s" % (node))
             logging.info("Instance: " + str(node) + " stopped")
         except Exception as e:
             logging.error("Failed to stop node instance %s. Encountered following " "exception: %s." % (node, e))
@@ -37,7 +37,7 @@ class OPENSTACKCLOUD:
     # Reboot the node instance
     def reboot_instances(self, node):
         try:
-            runcommand.invoke("openstack server reboot --soft %s" % (node))
+            runcommand.invoke("openstack server reboot --soft --insecure %s" % (node))
             logging.info("Instance: " + str(node) + " rebooted")
         except Exception as e:
             logging.error("Failed to reboot node instance %s. Encountered following " "exception: %s." % (node, e))
@@ -70,7 +70,7 @@ class OPENSTACKCLOUD:
 
     # Get the openstack instance name
     def get_openstack_nodename(self, os_node_ip):
-        server_list = runcommand.invoke("openstack server list | grep %s" % (os_node_ip))
+        server_list = runcommand.invoke("openstack --insecure server list | grep %s" % (os_node_ip))
         list_of_servers = server_list.split("\n")
         for item in list_of_servers:
             items = item.split("|")
