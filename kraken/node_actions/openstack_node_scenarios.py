@@ -13,7 +13,7 @@ class OPENSTACKCLOUD:
     # Get the instance ID of the node
     def get_instance_id(self, node):
         openstack_node_ip = nodeaction.get_node_ip(node)
-        openstack_node_name = self.openstackcloud.get_openstack_nodename(openstack_node_ip)
+        openstack_node_name = self.get_openstack_nodename(openstack_node_ip)
         return openstack_node_name
 
     # Start the node instance
@@ -99,7 +99,7 @@ class openstack_node_scenarios(abstract_node_scenarios):
                 logging.info("Starting the node %s" % (node))
                 openstack_node_name = self.openstackcloud.get_instance_id(node)
                 self.openstackcloud.start_instances(openstack_node_name)
-                self.openstackcloud.wait_until_running(openstack_node_name)
+                self.openstackcloud.wait_until_running(openstack_node_name, timeout)
                 nodeaction.wait_for_ready_status(node, timeout)
                 logging.info("Node with instance ID: %s is in running state" % (node))
                 logging.info("node_start_scenario has been successfully injected!")
@@ -118,7 +118,7 @@ class openstack_node_scenarios(abstract_node_scenarios):
                 logging.info("Stopping the node %s " % (node))
                 openstack_node_name = self.openstackcloud.get_instance_id(node)
                 self.openstackcloud.stop_instances(openstack_node_name)
-                self.openstackcloud.wait_until_stopped(openstack_node_name)
+                self.openstackcloud.wait_until_stopped(openstack_node_name, timeout)
                 logging.info("Node with instance name: %s is in stopped state" % (node))
                 nodeaction.wait_for_ready_status(node, timeout)
             except Exception as e:
@@ -153,7 +153,7 @@ class openstack_node_scenarios(abstract_node_scenarios):
                 openstack_node_name = self.openstackcloud.get_openstack_nodename(node_ip.strip())
                 logging.info("Starting the helper node %s" % (openstack_node_name))
                 self.openstackcloud.start_instances(openstack_node_name)
-                self.openstackcloud.wait_until_running(openstack_node_name)
+                self.openstackcloud.wait_until_running(openstack_node_name, timeout)
                 logging.info("Helper node with IP: %s is in running state" % (node_ip))
                 logging.info("node_start_scenario has been successfully injected!")
             except Exception as e:
@@ -171,7 +171,7 @@ class openstack_node_scenarios(abstract_node_scenarios):
                 openstack_node_name = self.openstackcloud.get_openstack_nodename(node_ip.strip())
                 logging.info("Stopping the helper node %s " % (openstack_node_name))
                 self.openstackcloud.stop_instances(openstack_node_name)
-                self.openstackcloud.wait_until_stopped(openstack_node_name)
+                self.openstackcloud.wait_until_stopped(openstack_node_name, timeout)
                 logging.info("Helper node with IP: %s is in stopped state" % (node_ip))
             except Exception as e:
                 logging.error("Failed to stop node instance. Encountered following exception: %s. " "Test Failed" % (e))

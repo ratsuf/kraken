@@ -8,6 +8,19 @@ Kraken injects deliberate failures into Kubernetes/OpenShift clusters to check i
 ### Workflow
 ![Kraken workflow](media/kraken-workflow.png)
 
+### Demo
+[![Kraken demo](media/KrakenStarting.png)](https://youtu.be/LN-fZywp_mo "Kraken Demo - Click to Watch!")
+
+
+### Chaos Testing Guide
+TODO: add a link to the hosted github pages once setup
+[Guide](docs/index.md) encapsulates:
+- Test methodology that needs to be embraced
+- Best practices that an OpenShift cluster, platform and applications running on top of it should take into account for best user experience, performance, resilience and reliability.
+- Tooling
+- Scenarios supported
+- Test environment recommendations as to how and where to run chaos tests.
+
 
 ### How to Get Started
 Instructions on how to setup, configure and run Kraken can be found at [Installation](docs/installation.md).
@@ -56,12 +69,25 @@ Instructions on how to setup the config and the options supported can be found a
 
 - [Zone Outage Scenarios](docs/zone_outage.md)
 
+- [Application_outages](docs/application_outages.md)
+
+- [PVC scenario](docs/pvc_scenario.md)
+
+- [Network_Chaos](docs/network_chaos.md)
+
 
 ### Kraken scenario pass/fail criteria and report
 It's important to make sure to check if the targeted component recovered from the chaos injection and also if the Kubernetes/OpenShift cluster is healthy as failures in one component can have an adverse impact on other components. Kraken does this by:
 - Having built in checks for pod and node based scenarios to ensure the expected number of replicas and nodes are up. It also supports running custom scripts with the checks.
 - Leveraging [Cerberus](https://github.com/openshift-scale/cerberus) to monitor the cluster under test and consuming the aggregated go/no-go signal to determine pass/fail post chaos. It is highly recommended to turn on the Cerberus health check feature avaliable in Kraken. Instructions on installing and setting up Cerberus can be found [here](https://github.com/openshift-scale/cerberus#installation) or can be installed from Kraken using the [instructions](https://github.com/cloud-bulldozer/kraken#setting-up-infrastructure-dependencies). Once Cerberus is up and running, set cerberus_enabled to True and cerberus_url to the url where Cerberus publishes go/no-go signal in the Kraken config file. Cerberus can monitor [application routes](https://github.com/cloud-bulldozer/cerberus/blob/master/docs/config.md#watch-routes) during the chaos and fails the run if it encounters downtime as it's a potential downtime in customer, users environment as well. It is especially important during the control plane chaos scenarios including the API server, Etcd, Ingress etc. It can be enabled by setting `check_applicaton_routes: True` in the [Kraken config](https://github.com/cloud-bulldozer/kraken/blob/master/config/config.yaml) provided application routes are being monitored in the [cerberus config](https://github.com/cloud-bulldozer/kraken/blob/master/config/cerberus.yaml)
 - Leveraging [kube-burner](docs/alerts.md) alerting feature to fail the runs in case of critical alerts.
+
+### Signaling
+In CI runs or any external job it is useful to stop Kraken once a certain test or state gets reached. We created a way to signal to kraken to pause the chaos or stop it completely using a signal posted to a port of your choice
+
+For example if we have a test run loading the cluster running and kraken separately running; we want to be able to know when to start/stop the kraken run based on when the test run completes or gets to a certain loaded state
+
+More detailed information on enabling and leveraging this feature can be found [here](docs/signal.md).
 
 
 ### Performance monitoring
@@ -82,15 +108,25 @@ In addition to checking the recovery and health of the cluster and components un
 - Blog post emphasizing the importance of making Chaos part of Performance and Scale runs to mimic the production environments: https://www.openshift.com/blog/making-chaos-part-of-kubernetes/openshift-performance-and-scalability-tests
 
 
+### Roadmap
+Following is a list of enhancements that we are planning to work on adding support in Kraken. Of course any help/contributions are greatly appreciated.
+- [Ability to visualize the metrics that are being captured by Kraken and stored in Elasticsearch](https://github.com/cloud-bulldozer/kraken/issues/124)
+- Ability to shape the ingress network similar to how Kraken supports [egress traffic shaping](https://github.com/cloud-bulldozer/kraken/blob/master/docs/network_chaos.md) today
+- Continue to improve [Chaos Testing Guide](https://cloud-bulldozer.github.io/kraken/) in terms of adding more best practices, test environment recommendations and scenarios to make sure OpenShift platform, as well the applications running on top it, are resilient and performant under chaotic conditions
+- Support for running Kraken on Kubernetes distribution - see https://github.com/cloud-bulldozer/kraken/issues/185, https://github.com/cloud-bulldozer/kraken/issues/186
+- Sweet logo for Kraken - see https://github.com/cloud-bulldozer/kraken/issues/195
+
+
 ### Contributions
 We are always looking for more enhancements, fixes to make it better, any contributions are most welcome. Feel free to report or work on the issues filed on github.
 
 [More information on how to Contribute](docs/contribute.md)
 
+If adding a new scenario or tweaking the main config, be sure to add in updates into the CI to be sure the CI is up to date
+Please read [this file]((CI/README.md#adding-a-test-case)) for more information on updates
+
 
 ### Community
-Key Members(slack_usernames): paigerube14, rook, mffiedler, mohit, dry923, rsevilla, ravielluri
-* [**#sig-scalability on Kubernetes Slack**](https://kubernetes.slack.com)
+Key Members(slack_usernames/full name): paigerube14/Paige Rubendall, mffiedler/Mike Fiedler, ravielluri/Naga Ravi Chaitanya Elluri
 * [**#sig-scalability on Kubernetes Slack**](https://kubernetes.slack.com)
 * [**#forum-chaos on CoreOS Slack internal to Red Hat**](https://coreos.slack.com)
-* [**#forum-perfscale on CoreOS Slack internal to Red Hat**](https://coreos.slack.com)

@@ -19,6 +19,15 @@ import kraken.shut_down.common_shut_down_func as shut_down
 import kraken.node_actions.run as nodeaction
 import kraken.kube_burner.client as kube_burner
 import kraken.zone_outage.actions as zone_outages
+import kraken.application_outage.actions as application_outage
+import kraken.pvc.pvc_scenario as pvc_scenario
+import kraken.network_chaos.actions as network_chaos
+import server as server
+
+
+def publish_kraken_status(status):
+    with open("/tmp/kraken_status", "w+") as file:
+        file.write(str(status))
 
 
 # Main function
@@ -35,6 +44,9 @@ def main(cfg):
         distribution = config["kraken"].get("distribution", "openshift")
         kubeconfig_path = config["kraken"].get("kubeconfig_path", "")
         chaos_scenarios = config["kraken"].get("chaos_scenarios", [])
+        publish_running_status = config["kraken"].get("publish_kraken_status", False)
+        port = config["kraken"].get("port", "8081")
+        run_signal = config["kraken"].get("signal_state", "RUN")
         litmus_version = config["kraken"].get("litmus_version", "v1.9.1")
         litmus_uninstall = config["kraken"].get("litmus_uninstall", False)
         wait_duration = config["tunings"].get("wait_duration", 60)
@@ -67,6 +79,20 @@ def main(cfg):
 
         # find node kraken might be running on
         kubecli.find_kraken_node()
+
+        # Set up kraken url to track signal
+        if not 0 <= int(port) <= 65535:
+            logging.info("Using port 8081 as %s isn't a valid port number" % (port))
+            port = 8081
+        address = ("0.0.0.0", port)
+
+        # If publish_running_status is False this should keep us going in our loop below
+        if publish_running_status:
+            server_address = address[0]
+            port = address[1]
+            logging.info("Publishing kraken status at http://%s:%s" % (server_address, port))
+            server.start_server(address)
+            publish_kraken_status(run_signal)
 
         # Cluster info
         logging.info("Fetching cluster info")
@@ -107,11 +133,24 @@ def main(cfg):
         start_time = int(time.time())
 
         # Loop to run the chaos starts here
-        while int(iteration) < iterations:
+        while int(iteration) < iterations and run_signal != "STOP":
             # Inject chaos scenarios specified in the config
             logging.info("Executing scenarios for iteration " + str(iteration))
             if chaos_scenarios:
                 for scenario in chaos_scenarios:
+                    if publish_running_status:
+                        run_signal = server.get_status(address)
+                    if run_signal == "PAUSE":
+                        while publish_running_status and run_signal == "PAUSE":
+                            logging.info(
+                                "Pausing Kraken run, waiting for %s seconds and will re-poll signal"
+                                % str(wait_duration)
+                            )
+                            time.sleep(wait_duration)
+                            run_signal = server.get_status(address)
+                    if run_signal == "STOP":
+                        logging.info("Received STOP signal; ending Kraken run")
+                        break
                     scenario_type = list(scenario.keys())[0]
                     scenarios_list = scenario[scenario_type]
                     if scenarios_list:
@@ -168,6 +207,21 @@ def main(cfg):
                         elif scenario_type == "zone_outages":
                             logging.info("Inject zone outages")
                             zone_outages.run(scenarios_list, config, wait_duration)
+
+                        # Application outages
+                        elif scenario_type == "application_outages":
+                            logging.info("Injecting application outage")
+                            application_outage.run(scenarios_list, config, wait_duration)
+
+                        # PVC scenarios
+                        elif scenario_type == "pvc_scenarios":
+                            logging.info("Running PVC scenario")
+                            pvc_scenario.run(scenarios_list, config)
+
+                        # Network scenarios
+                        elif scenario_type == "network_chaos":
+                            logging.info("Running Network Chaos")
+                            network_chaos.run(scenarios_list, config, wait_duration)
 
             iteration += 1
             logging.info("")
