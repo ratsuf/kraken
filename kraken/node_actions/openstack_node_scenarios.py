@@ -78,11 +78,8 @@ class OPENSTACKCLOUD:
             for i in items:
                 if i.strip() != "" and counter == 2:
                     node_name = i.strip()
-                    logging.info("Openstack node name is %s " % (node_name))
+                    print("Openstack node name is %s " % node_name)
                     counter += 1
-                    continue
-                item_list = i.split("=")
-                if len(item_list) == 2 and item_list[-1].strip() == os_node_ip:
                     return node_name
                 counter += 1
 
